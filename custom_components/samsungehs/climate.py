@@ -116,10 +116,9 @@ class SamsungEhsClimate(SamsungEhsEntity, ClimateEntity):
         control_mode = get_temperature_control_mode(self._device)
         if control_mode == "target_room_temperature":
             value = self.get_attribute(InRoomTemperature)
-        elif control_mode == "target_water_temperature":
+        elif control_mode in ("target_water_temperature", "water_law_offset"):
+            # The offset shifts the curve's flow target, so show the flow.
             value = self.get_attribute(IndoorFlowTemperature)
-        elif control_mode == "water_law_offset":
-            value = self.get_attribute(InWaterLawOffsetTemperature)
         else:
             return None
         return (
@@ -196,6 +195,12 @@ class SamsungEhsClimate(SamsungEhsEntity, ClimateEntity):
     @property
     def max_temp(self) -> float | None:
         """Return the maximum temperature."""
+        # The water law offset runs from -5 to +5.
+        if (
+            self.available
+            and get_temperature_control_mode(self._device) == "water_law_offset"
+        ):
+            return 5.0
         return 50.0
 
     async def async_set_temperature(self, **kwargs: Any) -> None:

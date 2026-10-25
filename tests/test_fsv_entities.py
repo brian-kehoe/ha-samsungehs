@@ -67,7 +67,7 @@ def test_climate_control_priority(
     if room_control is not None:
         device.attributes[16679] = indoor.InFsv2093.parse_payload(bytes([room_control]))
     if thermostat1 or thermostat2 or operation == InOperationMode.AUTO:
-        current, target, write_message = (2.0, 2.0, indoor.InWaterLawOffsetTemperature)
+        current, target, write_message = (33.5, 2.0, indoor.InWaterLawOffsetTemperature)
     elif reference == 0:
         current, target, write_message = (20.5, 21.0, indoor.InTargetTemperature)
     else:
@@ -79,6 +79,8 @@ def test_climate_control_priority(
     entity = SamsungEhsClimate(coordinator, SUBENTRY)
     assert entity.current_temperature == current
     assert entity.target_temperature == target
+    offset_mode = write_message is indoor.InWaterLawOffsetTemperature
+    assert entity.max_temp == (5.0 if offset_mode else 50.0)
     asyncio.run(entity.async_set_temperature(temperature=target))
     device.write_attribute.assert_awaited_once_with(
         write_message, target, mode=DataType.REQUEST
